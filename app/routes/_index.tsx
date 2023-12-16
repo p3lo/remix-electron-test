@@ -30,10 +30,11 @@ export default function Index() {
   const dataFromLoader = useLoaderData<typeof loader>();
   const [data, setData] = useState<SheetData[]>([]);
   const [interval, setInterval] = useState<string[]>([]);
+  const [oncode, setOncode] = useState<string[]>([]);
   const [selectCyclicValues, setSelectCyclicValues] = useState<
     Array<{ interval: string; TYPE: string; VALUES: string; MINORHOURS: string; TIMEZONE: string }>
   >([]);
-  console.log(selectCyclicValues);
+  console.log(oncode);
   useEffect(() => {
     if (data.length > 0 && dataFromLoader.getConfig) {
       let intervals: string[] = [];
@@ -43,6 +44,18 @@ export default function Index() {
         }
       });
       setInterval(intervals);
+      let oncodes: string[] = [];
+      data.forEach(async (job) => {
+        if (job.BB) {
+          const regex = new RegExp(job.Q, 'g');
+          let modifiedJobName = job.BB.replace(regex, '%%JOBNAME');
+          modifiedJobName = modifiedJobName.replace(/\s*([:-@])\s*/g, '$1');
+          if (!oncodes.includes(modifiedJobName)) {
+            oncodes.push(modifiedJobName);
+          }
+        }
+      });
+      setOncode(oncodes);
     }
   }, [data]);
 
@@ -198,8 +211,8 @@ export default function Index() {
                           <SelectValue placeholder="minutes" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="minutes">Minutes</SelectItem>
-                          <SelectItem value="hours">Hours</SelectItem>
+                          <SelectItem value="minutes">minutes</SelectItem>
+                          <SelectItem value="hours">hours</SelectItem>
                         </SelectContent>
                       </Select>
                     ) : (
@@ -228,9 +241,9 @@ export default function Index() {
                           <SelectValue placeholder="timezone" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="cst">CST</SelectItem>
-                          <SelectItem value="est">EST</SelectItem>
-                          <SelectItem value="cet">CET</SelectItem>
+                          <SelectItem value="cst">cst</SelectItem>
+                          <SelectItem value="est">est</SelectItem>
+                          <SelectItem value="cet">cet</SelectItem>
                         </SelectContent>
                       </Select>
                     )}
