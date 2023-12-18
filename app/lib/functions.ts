@@ -67,3 +67,11 @@ function formatXml(xml: string): string {
 
   return formatted.substring(1, formatted.length - 3);
 }
+
+export async function writeFileTest(content: string) {
+  try {
+    await fs.writeFile('output.xml', content);
+  } catch (err) {
+    console.log(err);
+  }
+}

@@ -5,3 +5,4 @@ public/build
 dist
 .env
 config
+output.xml

@@ -5,7 +5,7 @@ import { Label } from '~/components/ui/label';
 import * as XLSX from 'xlsx';
 import { useState, ChangeEvent, useEffect } from 'react';
 import { Button } from '~/components/ui/button';
-import { openConfigFiles } from '~/lib/functions';
+import { openConfigFiles, writeFileTest } from '~/lib/functions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
 import { Separator } from '~/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
@@ -21,6 +21,14 @@ type OncodeType = {
   message: string;
 };
 
+type IntervalType = {
+  interval: string;
+  TYPE: string;
+  VALUES: string;
+  MINORHOURS: string;
+  TIMEZONE: string;
+};
+
 export async function loader({}: LoaderFunctionArgs) {
   // fetch external file from data directory
   const getConfig = await openConfigFiles();
@@ -31,8 +39,83 @@ export async function loader({}: LoaderFunctionArgs) {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const form = await request.formData();
-  const data = JSON.parse(form.get('data') as string);
-  console.log(data[1]);
+  const xml_structure = JSON.parse(form.get('xml_structure') as string);
+  const interval = JSON.parse(form.get('interval') as string) as IntervalType[];
+  const oncode = JSON.parse(form.get('oncode') as string) as OncodeType[];
+  const nodeid = form.get('nodeid') as string;
+  const sheet_data = JSON.parse(form.get('sheet_data') as string) as SheetData[];
+  let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<DEFTABLE xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="Folder.xsd">\n`;
+
+  let currentBD: string | null = null;
+
+  sheet_data.forEach((item) => {
+    if (item.BD !== currentBD) {
+      if (currentBD !== null) {
+        // Close the current FOLDER tag if it's not the first item
+        xml += '\t</FOLDER>\n';
+      }
+
+      // Start a new FOLDER tag
+      xml += `\t<FOLDER ${Object.keys(xml_structure.FOLDER.attributes)
+        .map((key) => {
+          const attribute = xml_structure.FOLDER.attributes[key];
+          let value;
+
+          if ('default' in attribute) {
+            value = attribute.default;
+          } else if ('excel_column' in attribute) {
+            value = item[attribute.excel_column];
+
+            if ('enum' in attribute && value.split(' ')[1].toUpperCase() in attribute.enum) {
+              value = attribute.enum[value.split(' ')[1].toUpperCase()];
+            }
+          }
+
+          return `${key}="${value}"`;
+        })
+        .join(' ')}>\n`;
+
+      currentBD = item.BD;
+    }
+    xml += `\t\t<JOB `;
+
+    for (const key of Object.keys(xml_structure.FOLDER.JOB.attributes)) {
+      const attribute = xml_structure.FOLDER.JOB.attributes[key];
+      console.log(key);
+      let value;
+
+      if ('default' in attribute) {
+        value = attribute.default;
+      } else if ('excel_column' in attribute) {
+        value = item[attribute.excel_column] as string;
+        if (value === undefined) {
+          continue;
+        }
+        if ('enum' in attribute && value?.toUpperCase() in attribute.enum) {
+          value = attribute.enum[value?.toUpperCase()];
+        }
+      }
+
+      xml += `${key}="${value}" `;
+
+      // Add your condition to break the loop
+      // if (/* condition */) {
+      //   break;
+      // }
+    }
+
+    xml += `>\n`;
+
+    // Generate the rest of the XML for the item...
+  });
+
+  if (currentBD !== null) {
+    // Close the last FOLDER tag
+    xml += '\t</FOLDER>\n';
+  }
+
+  xml += `</DEFTABLE>`;
+  writeFileTest(xml);
   return null;
 };
 
@@ -40,12 +123,12 @@ export default function Index() {
   const dataFromLoader = useLoaderData<typeof loader>();
   const [data, setData] = useState<SheetData[]>([]);
   const [interval, setInterval] = useState<string[]>([]);
-  const [oncode, setOncode] = useState<string[]>([]);
+  const [nodeId, setNodeId] = useState<string>('');
   const [updateOncode, setUpdateOncode] = useState<OncodeType[]>([]);
   const [selectCyclicValues, setSelectCyclicValues] = useState<
     Array<{ interval: string; TYPE: string; VALUES: string; MINORHOURS: string; TIMEZONE: string }>
   >([]);
-  console.log(updateOncode);
+
   useEffect(() => {
     if (data.length > 0 && dataFromLoader.getConfig) {
       let intervals: string[] = [];
@@ -55,8 +138,6 @@ export default function Index() {
           intervals.push(job.Z);
         }
         if (job.BB) {
-          // const regex = new RegExp(job.Q, 'g');
-          // let modifiedJobName = job.BB.replace(regex, '%%JOBNAME');
           let modifiedJobName = job.BB.replace(/\b\w*_\w*\b/g, '%%JOBNAME');
           modifiedJobName = modifiedJobName.replace(/\s*([:@-])\s*/g, '$1');
           if (
@@ -81,7 +162,6 @@ export default function Index() {
         );
       }
       setInterval(intervals);
-      setOncode(oncodes);
     }
   }, [data]);
 
@@ -102,14 +182,17 @@ export default function Index() {
         const sheetName = workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
         const parsedData: SheetData[] = XLSX.utils.sheet_to_json(sheet, { range: 3, header: 'A' });
-        setData(parsedData);
+        const sortedData = [...parsedData].sort((a, b) => a.BD.localeCompare(b.BD));
+        setData(sortedData);
       }
     };
   };
 
   return (
     <main className="flex flex-col gap-y-5 w-full">
-      <h1 className="p-3 font-bold">Welcome to Remix</h1>
+      <div className="w-full flex justify-center items-center">
+        <h1 className="p-3 font-bold ">Convert</h1>
+      </div>
       {/* {dataFromLoader.getConfig && <p>User data path: {JSON.stringify(dataFromLoader.getConfig)}</p>} */}
       <div className="flex gap-x-5 items-end justify-center">
         <div className="grid w-full max-w-sm items-center gap-1.5">
@@ -142,7 +225,13 @@ export default function Index() {
                 <div className="w-full flex grow items-center justify-center">
                   <div className="grid w-full  items-center gap-1.5 max-w-sm">
                     <Label htmlFor="nodeid">NodeId</Label>
-                    <Input id="nodeid" type="text" placeholder="Set NODEID" />
+                    <Input
+                      id="nodeid"
+                      type="text"
+                      placeholder="Set NODEID"
+                      value={nodeId}
+                      onChange={(e) => setNodeId(e.target.value)}
+                    />
                   </div>
                 </div>
               </TabsContent>
@@ -377,12 +466,16 @@ export default function Index() {
               </TabsContent>
             </Tabs>
           </div>
+          <Form method="post" className="flex w-full justify-center items-center">
+            <input hidden name="xml_structure" type="text" value={JSON.stringify(dataFromLoader.getConfig)} readOnly />
+            <input hidden name="nodeid" type="text" value={nodeId} readOnly />
+            <input hidden name="interval" type="text" value={JSON.stringify(selectCyclicValues)} readOnly />
+            <input hidden name="oncode" type="text" value={JSON.stringify(updateOncode)} readOnly />
+            <input hidden name="sheet_data" type="text" value={JSON.stringify(data)} readOnly />
+            <Button type="submit">Create XML</Button>
+          </Form>
         </div>
       )}
-      <Form method="post">
-        <input hidden name="data" type="text" value={JSON.stringify(data)} readOnly />
-        <Button type="submit">Submit</Button>
-      </Form>
     </main>
   );
 }
