@@ -32,13 +32,19 @@ export async function openConfigFiles() {
   return config;
 }
 
-function assignAttributes(obj: NestedObject, keyToInsert: string, insertJsonConfig: NestedObject) {
+function assignAttributes(obj: NestedObject, keyToInsert: string, insertJsonConfig: NestedObject | NestedObject[]) {
   for (const key in obj) {
     if (obj.hasOwnProperty(key)) {
       if (typeof obj[key] === 'object' && obj[key] !== null) {
         if (key === keyToInsert) {
-          // Merge the insertJsonConfig into the existing object
-          obj[key] = { ...obj[key], ...insertJsonConfig };
+          // Check if insertJsonConfig is an array
+          if (Array.isArray(insertJsonConfig)) {
+            // If it is, assign it directly
+            obj[key] = insertJsonConfig;
+          } else {
+            // If it's not, merge it into the existing object
+            obj[key] = { ...obj[key], ...insertJsonConfig };
+          }
         } else {
           // Recursively call for nested objects
           assignAttributes(obj[key], keyToInsert, insertJsonConfig);
@@ -47,6 +53,22 @@ function assignAttributes(obj: NestedObject, keyToInsert: string, insertJsonConf
     }
   }
 }
+
+// function assignAttributes(obj: NestedObject, keyToInsert: string, insertJsonConfig: NestedObject) {
+//   for (const key in obj) {
+//     if (obj.hasOwnProperty(key)) {
+//       if (typeof obj[key] === 'object' && obj[key] !== null) {
+//         if (key === keyToInsert) {
+//           // Merge the insertJsonConfig into the existing object
+//           obj[key] = { ...obj[key], ...insertJsonConfig };
+//         } else {
+//           // Recursively call for nested objects
+//           assignAttributes(obj[key], keyToInsert, insertJsonConfig);
+//         }
+//       }
+//     }
+//   }
+// }
 
 function formatXml(xml: string): string {
   let formatted = '';
