@@ -5,23 +5,23 @@ type NestedObject = {
   [key: string]: any;
 };
 
-export async function openConfigFiles() {
-  const filePathConfig = path.join(__dirname, '..', 'config', 'config.json');
+export async function openConfigFiles(pathToConfig: string) {
+  const filePathConfig = path.join(pathToConfig, 'config.json');
   const fileContentsConfig = await fs.readFile(filePathConfig, 'utf8');
   const config = JSON.parse(fileContentsConfig);
-  const filePathFolder = path.join(__dirname, '..', 'config', 'FOLDER.json');
+  const filePathFolder = path.join(pathToConfig, 'FOLDER.json');
   const fileContentsFolder = await fs.readFile(filePathFolder, 'utf8');
   const folder = JSON.parse(fileContentsFolder);
-  const filePathJob = path.join(__dirname, '..', 'config', 'JOB.json');
+  const filePathJob = path.join(pathToConfig, 'JOB.json');
   const fileContentsJob = await fs.readFile(filePathJob, 'utf8');
   const job = JSON.parse(fileContentsJob);
-  const filePathOn = path.join(__dirname, '..', 'config', 'ON.json');
+  const filePathOn = path.join(pathToConfig, 'ON.json');
   const fileContentsOn = await fs.readFile(filePathOn, 'utf8');
   const on = JSON.parse(fileContentsOn);
-  const filePathQuantitative = path.join(__dirname, '..', 'config', 'QUANTITATIVE.json');
+  const filePathQuantitative = path.join(pathToConfig, 'QUANTITATIVE.json');
   const fileContentsQuantitative = await fs.readFile(filePathQuantitative, 'utf8');
   const quantitative = JSON.parse(fileContentsQuantitative);
-  const filePathVariable = path.join(__dirname, '..', 'config', 'VARIABLE.json');
+  const filePathVariable = path.join(pathToConfig, 'VARIABLE.json');
   const fileContentsVariable = await fs.readFile(filePathVariable, 'utf8');
   const variable = JSON.parse(fileContentsVariable);
   assignAttributes(config, 'FOLDER', folder);

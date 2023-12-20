@@ -7,7 +7,9 @@ import { useState, ChangeEvent, useEffect } from 'react';
 import { Button } from '~/components/ui/button';
 import { openConfigFiles, writeFileTest } from '~/lib/functions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
+import { Separator } from '~/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
+import electron from '~/electron.server';
 
 type SheetData = { [key: string]: any };
 
@@ -28,9 +30,17 @@ type IntervalType = {
   TIMEZONE: string;
 };
 
-export async function loader({}: LoaderFunctionArgs) {
-  // fetch external file from data directory
-  const getConfig = await openConfigFiles();
+export async function loader({ request }: LoaderFunctionArgs) {
+  const isDev = process.env.NODE_ENV === 'development';
+  const url = isDev ? 'http://localhost:3000' : 'http://localhost';
+  const cookies = await electron.session.defaultSession.cookies.get({ url });
+  const getDirFromCookie = cookies.find((cookie) => cookie.name === 'selectedDirectory');
+  if (!getDirFromCookie) {
+    return {
+      getConfig: null,
+    };
+  }
+  const getConfig = await openConfigFiles(getDirFromCookie.value);
   return {
     getConfig: getConfig,
   };
@@ -48,7 +58,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   let currentBD: string | null = null;
 
   sheet_data.forEach((item) => {
-    const intervalKeys = ['CYCLIC', 'CYCLIC_TIMES_SEQUENCE', 'CYCLIC_TYPE', 'INTERVAL'];
     if (item.BD !== currentBD) {
       if (currentBD !== null) {
         // Close the current FOLDER tag if it's not the first item
@@ -77,51 +86,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
       currentBD = item.BD;
     }
-    const sheetInterval = item.Z;
-    // console.log(sheetInterval);
     xml += `\t\t<JOB `;
 
     for (const key of Object.keys(xml_structure.FOLDER.JOB.attributes)) {
       const attribute = xml_structure.FOLDER.JOB.attributes[key];
-      // console.log(key, interval);
-      let value = '';
-
-      if (key === 'NODEID' && nodeid !== '') {
-        value = nodeid;
-        xml += `${key}="${value}" `;
-        continue;
-      }
-
-      if (intervalKeys.includes(key) && sheetInterval !== undefined) {
-        const index = interval.findIndex((item) => item.interval === sheetInterval);
-        if (index !== -1) {
-          if (key === 'CYCLIC') {
-            value = '1';
-          } else if (key === 'CYCLIC_TYPE') {
-            if (interval[index].TYPE === 'cyclic') {
-              value = 'C';
-            } else {
-              value = 'S';
-            }
-          } else if (key === 'CYCLIC_TIMES_SEQUENCE') {
-            if (interval[index].TYPE === 'sequence' && interval[index].VALUES !== undefined) {
-              value = interval[index].VALUES;
-            }
-          } else if (key === 'INTERVAL') {
-            if (interval[index].TYPE === 'cyclic' && interval[index].VALUES !== undefined) {
-              let morh;
-              if (interval[index].MINORHOURS === 'hours') {
-                morh = 'H';
-              } else {
-                morh = 'M';
-              }
-              value = interval[index].VALUES.padStart(5, '0') + morh;
-            }
-          }
-          xml += `${key}="${value}" `;
-          continue;
-        }
-      }
+      console.log(key);
+      let value;
 
       if ('default' in attribute) {
         value = attribute.default;
@@ -144,52 +114,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
 
     xml += `>\n`;
-
-    xml_structure.FOLDER.JOB.VARIABLE.map((variable: any) => {
-      const name = variable.attributes.NAME;
-      let value;
-
-      if ('default' in variable.attributes.VALUE) {
-        value = variable.attributes.VALUE.default;
-      } else if ('excel_column' in variable.attributes.VALUE) {
-        value = item[variable.attributes.VALUE.excel_column];
-
-        if ('enum' in variable.attributes.VALUE && value?.toUpperCase() in variable.attributes.VALUE.enum) {
-          value = variable.attributes.VALUE.enum[value?.toUpperCase()];
-        }
-      }
-
-      xml += `\t\t\t<VARIABLE NAME="${name}" VALUE="${value}" />\n`;
-    });
-
-    if (item.BG !== undefined) {
-      const qrs = item.BG.split(/\s+/);
-      qrs.forEach((qr: string) => {
-        xml += `\t\t\t<QUANTITATIVE NAME="${qr}" QUANT="1" ONFAIL="R" ONOK="R" />\n`;
-      });
-    }
-
-    if (item.BB !== undefined) {
-      const on = xml_structure.FOLDER.JOB.ON;
-
-      let modifiedJobName = item.BB.replace(/\b\w*_\w*\b/g, '%%JOBNAME');
-      modifiedJobName = modifiedJobName.replace(/\s*([:@-])\s*/g, '$1');
-      const index = oncode
-        .map((code) => code.oncode.toLowerCase().replace(/\s+/g, ''))
-        .findIndex((code) => code === modifiedJobName.toLowerCase().replace(/\s+/g, ''));
-      if (index !== -1 && oncode[index].message !== '' && oncode[index].subject !== '' && oncode[index].mailto !== '') {
-        xml += `\t\t\t<ON STMT="${on.attributes.STMT}" CODE="COMPSTAT EQ ${oncode[index].rc}" >\n`;
-        xml += `\t\t\t\t<DOMAIL URGENCY="${on.DOMAIL.attributes.URGENCY}" DEST="${oncode[index].mailto}" SUBJECT="${
-          oncode[index].subject
-        }" MESSAGE="${oncode[index].message}" ATTACH_SYSOUT="${oncode[index].output === 'Yes' ? 'Y' : 'N'}" />\n`;
-        xml += `\t\t\t</ON>\n`;
-      } else {
-        xml += `\t\t\t<ON STMT="${on.attributes.STMT}" CODE="${on.attributes.CODE}">\n`;
-        xml += `\t\t\t\t<DOMAIL URGENCY="${on.DOMAIL.attributes.URGENCY}" DEST="${on.DOMAIL.attributes.DEST}" SUBJECT="${on.DOMAIL.attributes.SUBJECT}" MESSAGE="${on.DOMAIL.attributes.MESSAGE}" ATTACH_SYSOUT="${on.DOMAIL.attributes.ATTACH_SYSOUT}" />\n`;
-        xml += `\t\t\t</ON>\n`;
-      }
-    }
-    xml += '\t\t</JOB>\n';
 
     // Generate the rest of the XML for the item...
   });
@@ -238,7 +162,7 @@ export default function Index() {
         setUpdateOncode(
           oncodes.map((oncode) => ({
             oncode,
-            rc: '1',
+            rc: '',
             mailto: '',
             output: 'yes',
             subject: '',
