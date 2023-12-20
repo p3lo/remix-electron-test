@@ -7,7 +7,6 @@ import { useState, ChangeEvent, useEffect } from 'react';
 import { Button } from '~/components/ui/button';
 import { openConfigFiles, writeFileTest } from '~/lib/functions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
-import { Separator } from '~/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 
 type SheetData = { [key: string]: any };
