@@ -87,6 +87,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       // console.log(key, interval);
       let value = '';
 
+      if (key === 'NODEID' && nodeid !== '') {
+        value = nodeid;
+        xml += `${key}="${value}" `;
+        continue;
+      }
+
       if (intervalKeys.includes(key) && sheetInterval !== undefined) {
         const index = interval.findIndex((item) => item.interval === sheetInterval);
         if (index !== -1) {
@@ -151,12 +157,39 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
         if ('enum' in variable.attributes.VALUE && value?.toUpperCase() in variable.attributes.VALUE.enum) {
           value = variable.attributes.VALUE.enum[value?.toUpperCase()];
-          console.log(variable.attributes.VALUE.enum);
         }
       }
 
       xml += `\t\t\t<VARIABLE NAME="${name}" VALUE="${value}" />\n`;
     });
+
+    if (item.BG !== undefined) {
+      const qrs = item.BG.split(/\s+/);
+      qrs.forEach((qr: string) => {
+        xml += `\t\t\t<QUANTITATIVE NAME="${qr}" QUANT="1" ONFAIL="R" ONOK="R" />\n`;
+      });
+    }
+
+    if (item.BB !== undefined) {
+      const on = xml_structure.FOLDER.JOB.ON;
+
+      let modifiedJobName = item.BB.replace(/\b\w*_\w*\b/g, '%%JOBNAME');
+      modifiedJobName = modifiedJobName.replace(/\s*([:@-])\s*/g, '$1');
+      const index = oncode
+        .map((code) => code.oncode.toLowerCase().replace(/\s+/g, ''))
+        .findIndex((code) => code === modifiedJobName.toLowerCase().replace(/\s+/g, ''));
+      if (index !== -1 && oncode[index].message !== '' && oncode[index].subject !== '' && oncode[index].mailto !== '') {
+        xml += `\t\t\t<ON STMT="${on.attributes.STMT}" CODE="COMPSTAT EQ ${oncode[index].rc}" >\n`;
+        xml += `\t\t\t\t<DOMAIL URGENCY="${on.DOMAIL.attributes.URGENCY}" DEST="${oncode[index].mailto}" SUBJECT="${
+          oncode[index].subject
+        }" MESSAGE="${oncode[index].message}" ATTACH_SYSOUT="${oncode[index].output === 'Yes' ? 'Y' : 'N'}" />\n`;
+        xml += `\t\t\t</ON>\n`;
+      } else {
+        xml += `\t\t\t<ON STMT="${on.attributes.STMT}" CODE="${on.attributes.CODE}">\n`;
+        xml += `\t\t\t\t<DOMAIL URGENCY="${on.DOMAIL.attributes.URGENCY}" DEST="${on.DOMAIL.attributes.DEST}" SUBJECT="${on.DOMAIL.attributes.SUBJECT}" MESSAGE="${on.DOMAIL.attributes.MESSAGE}" ATTACH_SYSOUT="${on.DOMAIL.attributes.ATTACH_SYSOUT}" />\n`;
+        xml += `\t\t\t</ON>\n`;
+      }
+    }
     xml += '\t\t</JOB>\n';
 
     // Generate the rest of the XML for the item...
@@ -206,7 +239,7 @@ export default function Index() {
         setUpdateOncode(
           oncodes.map((oncode) => ({
             oncode,
-            rc: '',
+            rc: '1',
             mailto: '',
             output: 'yes',
             subject: '',
