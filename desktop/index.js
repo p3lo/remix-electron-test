@@ -59,12 +59,13 @@ async function checkAndSelectDirectory() {
       if (fs.existsSync(newConfigPath)) {
         // Valid path found, set the cookie
         const isDev = process.env.NODE_ENV === 'development';
+
         const url = isDev ? 'http://localhost:3000' : 'http://localhost';
         await win.webContents.session.cookies.set({
           url: url,
           name: 'selectedDirectory',
           value: selectedDirectory,
-          expirationDate: new Date().getTime() / 100000 + 86400, // 1 day from now
+          expirationDate: new Date().getTime() / 100000 + 86400,
         });
 
         console.log('Valid directory selected:', selectedDirectory);
