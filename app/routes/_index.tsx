@@ -1,5 +1,5 @@
-import { LoaderFunctionArgs, type ActionFunctionArgs } from '@remix-run/node';
-import { Form, useLoaderData } from '@remix-run/react';
+import { type ActionFunctionArgs } from '@remix-run/node';
+import { Form } from '@remix-run/react';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
 import * as XLSX from 'xlsx';
@@ -28,24 +28,6 @@ type IntervalType = {
   MINORHOURS: string;
   TIMEZONE: string;
 };
-
-export async function loader({}: LoaderFunctionArgs) {
-  const isDev = process.env.NODE_ENV === 'development';
-  const url = isDev ? 'http://localhost:3000' : 'http://localhost';
-  const cookies = await electron.session.defaultSession.cookies.get({ url });
-  const getDirFromCookie = cookies.find((cookie) => cookie.name === 'selectedDirectory');
-  if (!getDirFromCookie) {
-    console.log('No directory selected');
-    return {
-      getConfig: null,
-    };
-  }
-  const getConfig = await openConfigFiles(getDirFromCookie.value);
-  // console.log(getConfig);
-  return {
-    getConfig: getConfig,
-  };
-}
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const form = await request.formData();
