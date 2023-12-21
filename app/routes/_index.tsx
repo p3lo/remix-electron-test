@@ -41,7 +41,7 @@ export async function loader({}: LoaderFunctionArgs) {
     };
   }
   const getConfig = await openConfigFiles(getDirFromCookie.value);
-  console.log(getConfig);
+  // console.log(getConfig);
   return {
     getConfig: getConfig,
   };
@@ -49,7 +49,7 @@ export async function loader({}: LoaderFunctionArgs) {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const form = await request.formData();
-  const xml_structure = JSON.parse(form.get('xml_structure') as string);
+  // const xml_structure = JSON.parse(form.get('xml_structure') as string);
   const interval = JSON.parse(form.get('interval') as string) as IntervalType[];
   const oncode = JSON.parse(form.get('oncode') as string) as OncodeType[];
   const nodeid = form.get('nodeid') as string;
@@ -58,6 +58,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const url = isDev ? 'http://localhost:3000' : 'http://localhost';
   const cookies = await electron.session.defaultSession.cookies.get({ url });
   const getDirFromCookie = cookies.find((cookie) => cookie.name === 'selectedDirectory');
+  const xml_structure = await openConfigFiles(getDirFromCookie?.value!);
 
   let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<DEFTABLE xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="Folder.xsd">\n`;
 
@@ -221,7 +222,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function Index() {
-  const dataFromLoader = useLoaderData<typeof loader>();
+  // const dataFromLoader = useLoaderData<typeof loader>();
   const [data, setData] = useState<SheetData[]>([]);
   const [interval, setInterval] = useState<string[]>([]);
   const [nodeId, setNodeId] = useState<string>('');
@@ -231,7 +232,7 @@ export default function Index() {
   >([]);
 
   useEffect(() => {
-    if (data.length > 0 && dataFromLoader.getConfig) {
+    if (data.length > 0) {
       let intervals: string[] = [];
       let oncodes: string[] = [];
       data.forEach(async (job) => {
@@ -568,7 +569,6 @@ export default function Index() {
             </Tabs>
           </div>
           <Form method="post" className="flex w-full justify-center items-center">
-            <input hidden name="xml_structure" type="text" value={JSON.stringify(dataFromLoader.getConfig)} readOnly />
             <input hidden name="nodeid" type="text" value={nodeId} readOnly />
             <input hidden name="interval" type="text" value={JSON.stringify(selectCyclicValues)} readOnly />
             <input hidden name="oncode" type="text" value={JSON.stringify(updateOncode)} readOnly />

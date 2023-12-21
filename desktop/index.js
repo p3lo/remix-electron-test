@@ -9,13 +9,13 @@ let win;
 /** @param {string} url */
 async function createWindow(url) {
   win = new BrowserWindow({ show: false, width: 1200, height: 800 });
+  await checkAndSelectDirectory();
   await win.loadURL(url);
   win.show();
 
   if (process.env.NODE_ENV === 'development') {
     win.webContents.openDevTools();
   }
-  await checkAndSelectDirectory();
 }
 
 async function checkAndSelectDirectory() {
@@ -65,10 +65,10 @@ async function checkAndSelectDirectory() {
           url: url,
           name: 'selectedDirectory',
           value: selectedDirectory,
-          expirationDate: new Date().getTime() / 100000 + 86400,
+          expirationDate: Math.floor(new Date().getTime() / 1000) + 864000,
         });
 
-        console.log('Valid directory selected:', selectedDirectory);
+        console.log('Valid directory selected: ', selectedDirectory);
         validPathFound = true;
       } else {
         // Invalid path, prompt again

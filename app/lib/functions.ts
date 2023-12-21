@@ -92,6 +92,7 @@ function formatXml(xml: string): string {
 
 export async function writeFileTest(content: string, pathToConfig: string) {
   const filePathFolder = path.join(pathToConfig, 'output.xml');
+  console.log(filePathFolder);
   try {
     await fs.writeFile(filePathFolder, content);
   } catch (err) {
