@@ -556,10 +556,10 @@ export default function Index() {
                         <p className="text-xs whitespace-pre max-w-[500px] text-ellipsis">{values.origTimeFrom}</p>
                         <div className="flex gap-x-3">
                           <div className="grid w-full max-w-[330px] items-center gap-1.5">
-                            <Label htmlFor="timefrom">Time from</Label>
+                            <Label htmlFor="timefrom">Convert time from</Label>
                             <Input
                               id="timefrom"
-                              placeholder="time from"
+                              placeholder="Converted 24h time from"
                               value={values.correctTimeFrom}
                               onChange={(e) => {
                                 const newTimeFrom = [...timeFrom];
@@ -585,10 +585,10 @@ export default function Index() {
                         <p className="text-xs whitespace-pre max-w-[500px] text-ellipsis">{values.origTimeTo}</p>
                         <div className="flex gap-x-3">
                           <div className="grid w-full max-w-[330px] items-center gap-1.5">
-                            <Label htmlFor="timeto">Time to</Label>
+                            <Label htmlFor="timeto">Convert time to</Label>
                             <Input
                               id="timeto"
-                              placeholder="time to"
+                              placeholder="Converted 24h time to"
                               value={values.correctTimeTo}
                               onChange={(e) => {
                                 const newTimeTo = [...timeTo];
