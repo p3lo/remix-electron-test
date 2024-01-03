@@ -29,11 +29,23 @@ type IntervalType = {
   TIMEZONE: string;
 };
 
+type TimeFromType = {
+  origTimeFrom: string;
+  correctTimeFrom: string;
+};
+
+type TimeToType = {
+  origTimeTo: string;
+  correctTimeTo: string;
+};
+
 export const action = async ({ request }: ActionFunctionArgs) => {
   const form = await request.formData();
   // const xml_structure = JSON.parse(form.get('xml_structure') as string);
   const interval = JSON.parse(form.get('interval') as string) as IntervalType[];
   const oncode = JSON.parse(form.get('oncode') as string) as OncodeType[];
+  const timeFrom = JSON.parse(form.get('timefrom') as string) as TimeFromType[];
+  const timeTo = JSON.parse(form.get('timeto') as string) as TimeToType[];
   const nodeid = form.get('nodeid') as string;
   const sheet_data = JSON.parse(form.get('sheet_data') as string) as SheetData[];
   const isDev = process.env.NODE_ENV === 'development';
@@ -89,6 +101,26 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         value = nodeid;
         xml += `${key}="${value}" `;
         continue;
+      }
+      if (key === 'TIMEFROM') {
+        if (timeFrom.length > 0) {
+          const index = timeFrom.findIndex((tmfrom) => tmfrom.origTimeFrom === item.W);
+          if (index !== -1 && timeFrom[index].correctTimeFrom !== '') {
+            value = timeFrom[index].correctTimeFrom;
+            xml += `${key}="${value}" `;
+            continue;
+          }
+        }
+      }
+      if (key === 'TIMETO') {
+        if (timeTo.length > 0) {
+          const index = timeTo.findIndex((tmto) => tmto.origTimeTo === item.X);
+          if (index !== -1 && timeTo[index].correctTimeTo !== '') {
+            value = timeTo[index].correctTimeTo;
+            xml += `${key}="${value}" `;
+            continue;
+          }
+        }
       }
 
       if (intervalKeys.includes(key) && sheetInterval !== undefined) {
@@ -207,6 +239,8 @@ export default function Index() {
   // const dataFromLoader = useLoaderData<typeof loader>();
   const [data, setData] = useState<SheetData[]>([]);
   const [interval, setInterval] = useState<string[]>([]);
+  const [timeFrom, setTimeFrom] = useState<Array<{ origTimeFrom: string; correctTimeFrom: string }>>([]);
+  const [timeTo, setTimeTo] = useState<Array<{ origTimeTo: string; correctTimeTo: string }>>([]);
   const [nodeId, setNodeId] = useState<string>('');
   const [updateOncode, setUpdateOncode] = useState<OncodeType[]>([]);
   const [selectCyclicValues, setSelectCyclicValues] = useState<
@@ -216,10 +250,18 @@ export default function Index() {
   useEffect(() => {
     if (data.length > 0) {
       let intervals: string[] = [];
+      let timeFroms: string[] = [];
+      let timeTos: string[] = [];
       let oncodes: string[] = [];
       data.forEach(async (job) => {
         if (job.Z && !intervals.includes(job.Z)) {
           intervals.push(job.Z);
+        }
+        if (job.W && !timeFroms.includes(job.W)) {
+          timeFroms.push(job.W);
+        }
+        if (job.X && !timeTos.includes(job.X)) {
+          timeTos.push(job.X);
         }
         if (job.BB) {
           let modifiedJobName = job.BB.replace(/\b\w*_\w*\b/g, '%%JOBNAME');
@@ -246,6 +288,18 @@ export default function Index() {
         );
       }
       setInterval(intervals);
+      setTimeFrom(
+        timeFroms.map((origTimeFrom) => ({
+          origTimeFrom,
+          correctTimeFrom: '',
+        }))
+      );
+      setTimeTo(
+        timeTos.map((origTimeTo) => ({
+          origTimeTo,
+          correctTimeTo: '',
+        }))
+      );
     }
   }, [data]);
 
@@ -301,8 +355,18 @@ export default function Index() {
                 <TabsTrigger value="cyclic" className="grow">
                   Cyclic
                 </TabsTrigger>
+                {timeFrom.length > 0 && (
+                  <TabsTrigger value="timefrom" className="grow">
+                    TimeFrom
+                  </TabsTrigger>
+                )}
+                {timeTo.length > 0 && (
+                  <TabsTrigger value="timeto" className="grow">
+                    TimeTo
+                  </TabsTrigger>
+                )}
                 <TabsTrigger value="oncode" className="grow">
-                  On Code
+                  OnCode
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="nodeid">
@@ -481,6 +545,65 @@ export default function Index() {
                   );
                 })}
               </TabsContent>
+              <TabsContent value="timefrom" className="flex flex-col gap-y-3 ">
+                {timeFrom?.map((values, index) => {
+                  return (
+                    <div className="w-full flex grow items-center justify-center">
+                      <div key={index} className="grid w-full  items-center gap-1.5 max-w-sm">
+                        <Label className="text-xs" htmlFor={index.toString()}>
+                          Correct time from
+                        </Label>
+                        <p className="text-xs whitespace-pre max-w-[500px] text-ellipsis">{values.origTimeFrom}</p>
+                        <div className="flex gap-x-3">
+                          <div className="grid w-full max-w-[330px] items-center gap-1.5">
+                            <Label htmlFor="timefrom">Time from</Label>
+                            <Input
+                              id="timefrom"
+                              placeholder="time from"
+                              value={values.correctTimeFrom}
+                              onChange={(e) => {
+                                const newTimeFrom = [...timeFrom];
+                                newTimeFrom[index].correctTimeFrom = e.target.value;
+                                setTimeFrom(newTimeFrom);
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </TabsContent>
+              <TabsContent value="timeto" className="flex flex-col gap-y-3">
+                {timeTo?.map((values, index) => {
+                  return (
+                    <div className="w-full flex grow items-center justify-center">
+                      <div key={index} className="grid w-full  items-center gap-1.5 max-w-sm">
+                        <Label className="text-xs" htmlFor={index.toString()}>
+                          Correct time to
+                        </Label>
+                        <p className="text-xs whitespace-pre max-w-[500px] text-ellipsis">{values.origTimeTo}</p>
+                        <div className="flex gap-x-3">
+                          <div className="grid w-full max-w-[330px] items-center gap-1.5">
+                            <Label htmlFor="timeto">Time to</Label>
+                            <Input
+                              id="timeto"
+                              placeholder="time to"
+                              value={values.correctTimeTo}
+                              onChange={(e) => {
+                                const newTimeTo = [...timeTo];
+                                newTimeTo[index].correctTimeTo = e.target.value;
+                                setTimeTo(newTimeTo);
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </TabsContent>
+
               <TabsContent value="oncode" className="flex flex-col gap-y-3">
                 {updateOncode?.map((values, index) => {
                   return (
@@ -555,6 +678,8 @@ export default function Index() {
             <input hidden name="interval" type="text" value={JSON.stringify(selectCyclicValues)} readOnly />
             <input hidden name="oncode" type="text" value={JSON.stringify(updateOncode)} readOnly />
             <input hidden name="sheet_data" type="text" value={JSON.stringify(data)} readOnly />
+            <input hidden name="timefrom" type="text" value={JSON.stringify(timeFrom)} readOnly />
+            <input hidden name="timeto" type="text" value={JSON.stringify(timeTo)} readOnly />
             <Button type="submit">Create XML</Button>
           </Form>
         </div>
