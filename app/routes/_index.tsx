@@ -9,6 +9,7 @@ import { openConfigFiles, writeFileTest } from '~/lib/functions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import electron from '~/electron.server';
+import { Separator } from '~/components/ui/separator';
 
 type SheetData = { [key: string]: any };
 
@@ -393,167 +394,174 @@ export default function Index() {
                     TIMEZONE: 'cst',
                   };
                   return (
-                    <div key={index} className="grid w-full justify-center items-center gap-1.5">
-                      <Label className="text-xs" htmlFor={index.toString()}>
-                        Correct cyclic intervals
-                      </Label>
-                      <p className="text-xs">{interval}</p>
-                      <div className="flex gap-x-1">
-                        <Select
-                          name="cyclic"
-                          defaultValue={currentInterval.TYPE}
-                          onValueChange={(value) => {
-                            const newSelectValues = [...selectCyclicValues];
-                            const existingIntervalIndex = newSelectValues.findIndex(
-                              (item) => item.interval === interval
-                            );
-                            if (existingIntervalIndex > -1) {
-                              if (value === 'sequence') {
-                                newSelectValues[existingIntervalIndex].TIMEZONE = currentInterval.TIMEZONE;
-                              } else {
-                                newSelectValues[existingIntervalIndex].MINORHOURS = currentInterval.MINORHOURS;
-                              }
-                              newSelectValues[existingIntervalIndex].TYPE = value;
-                            } else {
-                              if (value === 'sequence') {
-                                newSelectValues.push({
-                                  interval,
-                                  TYPE: value,
-                                  VALUES: currentInterval.VALUES,
-                                  MINORHOURS: currentInterval.MINORHOURS,
-                                  TIMEZONE: currentInterval.TIMEZONE,
-                                });
-                              } else {
-                                newSelectValues.push({
-                                  interval,
-                                  TYPE: value,
-                                  VALUES: currentInterval.VALUES,
-                                  MINORHOURS: currentInterval.MINORHOURS,
-                                  TIMEZONE: currentInterval.TIMEZONE,
-                                });
-                              }
-                            }
-                            setSelectCyclicValues(newSelectValues);
-                          }}
-                        >
-                          <SelectTrigger className="w-[110px]">
-                            <SelectValue placeholder="Cyclic" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="cyclic">Cyclic</SelectItem>
-                            <SelectItem value="sequence">Sequence</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Input
-                          id={index.toString()}
-                          type="text"
-                          placeholder={
-                            currentInterval.TYPE === 'cyclic'
-                              ? 'Set cyclic value'
-                              : 'Set sequence values delimited by ,'
-                          }
-                          name="corrected"
-                          className="w-[500px]"
-                          value={currentInterval.VALUES}
-                          onChange={(e) => {
-                            const newSelectValues = [...selectCyclicValues];
-                            const existingIntervalIndex = newSelectValues.findIndex(
-                              (item) => item.interval === interval
-                            );
-                            if (existingIntervalIndex > -1) {
-                              newSelectValues[existingIntervalIndex].VALUES = e.target.value;
-                            } else {
-                              newSelectValues.push({
-                                interval,
-                                TYPE: currentInterval.TYPE,
-                                VALUES: e.target.value,
-                                MINORHOURS: currentInterval.MINORHOURS,
-                                TIMEZONE: currentInterval.TIMEZONE,
-                              });
-                            }
-                            setSelectCyclicValues(newSelectValues);
-                          }}
-                        />
-                        {currentInterval.TYPE === 'cyclic' ? (
+                    <div key={index} className="w-full grow">
+                      <div className="grid w-full grid-cols-2 items-center gap-5 px-2">
+                        <div className="flex flex-col items-end">
+                          <Label className="text-xs" htmlFor={index.toString()}>
+                            Correct cyclic intervals
+                          </Label>
+                          <p className="text-xs">{interval}</p>
+                        </div>
+                        <div className="flex gap-x-1">
                           <Select
-                            name="cyclic-c"
-                            defaultValue={currentInterval.MINORHOURS}
-                            value={currentInterval.MINORHOURS}
+                            name="cyclic"
+                            defaultValue={currentInterval.TYPE}
                             onValueChange={(value) => {
                               const newSelectValues = [...selectCyclicValues];
                               const existingIntervalIndex = newSelectValues.findIndex(
                                 (item) => item.interval === interval
                               );
                               if (existingIntervalIndex > -1) {
-                                newSelectValues[existingIntervalIndex].MINORHOURS = value;
+                                if (value === 'sequence') {
+                                  newSelectValues[existingIntervalIndex].TIMEZONE = currentInterval.TIMEZONE;
+                                } else {
+                                  newSelectValues[existingIntervalIndex].MINORHOURS = currentInterval.MINORHOURS;
+                                }
+                                newSelectValues[existingIntervalIndex].TYPE = value;
                               } else {
-                                newSelectValues.push({
-                                  interval,
-                                  TYPE: currentInterval.TYPE,
-                                  VALUES: currentInterval.VALUES,
-                                  MINORHOURS: value,
-                                  TIMEZONE: currentInterval.TIMEZONE,
-                                });
+                                if (value === 'sequence') {
+                                  newSelectValues.push({
+                                    interval,
+                                    TYPE: value,
+                                    VALUES: currentInterval.VALUES,
+                                    MINORHOURS: currentInterval.MINORHOURS,
+                                    TIMEZONE: currentInterval.TIMEZONE,
+                                  });
+                                } else {
+                                  newSelectValues.push({
+                                    interval,
+                                    TYPE: value,
+                                    VALUES: currentInterval.VALUES,
+                                    MINORHOURS: currentInterval.MINORHOURS,
+                                    TIMEZONE: currentInterval.TIMEZONE,
+                                  });
+                                }
                               }
                               setSelectCyclicValues(newSelectValues);
                             }}
                           >
-                            <SelectTrigger className="w-[100px]">
-                              <SelectValue placeholder="minutes" />
+                            <SelectTrigger className="w-[110px]">
+                              <SelectValue placeholder="Cyclic" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="minutes">minutes</SelectItem>
-                              <SelectItem value="hours">hours</SelectItem>
+                              <SelectItem value="cyclic">Cyclic</SelectItem>
+                              <SelectItem value="sequence">Sequence</SelectItem>
                             </SelectContent>
                           </Select>
-                        ) : (
-                          <Select
-                            name="cyclic-t"
-                            value={currentInterval.TIMEZONE}
-                            defaultValue={currentInterval.TIMEZONE}
-                            onValueChange={(value) => {
+                          <Input
+                            id={index.toString()}
+                            type="text"
+                            placeholder={
+                              currentInterval.TYPE === 'cyclic'
+                                ? 'Set cyclic value'
+                                : 'Set sequence values delimited by ,'
+                            }
+                            name="corrected"
+                            className="w-[500px]"
+                            value={currentInterval.VALUES}
+                            onChange={(e) => {
                               const newSelectValues = [...selectCyclicValues];
                               const existingIntervalIndex = newSelectValues.findIndex(
                                 (item) => item.interval === interval
                               );
                               if (existingIntervalIndex > -1) {
-                                newSelectValues[existingIntervalIndex].TIMEZONE = value;
+                                newSelectValues[existingIntervalIndex].VALUES = e.target.value;
                               } else {
                                 newSelectValues.push({
                                   interval,
                                   TYPE: currentInterval.TYPE,
-                                  VALUES: currentInterval.VALUES,
+                                  VALUES: e.target.value,
                                   MINORHOURS: currentInterval.MINORHOURS,
-                                  TIMEZONE: value,
+                                  TIMEZONE: currentInterval.TIMEZONE,
                                 });
                               }
                               setSelectCyclicValues(newSelectValues);
                             }}
-                          >
-                            <SelectTrigger className="w-[100px]">
-                              <SelectValue placeholder="timezone" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="cst">cst</SelectItem>
-                              <SelectItem value="est">est</SelectItem>
-                              <SelectItem value="cet">cet</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        )}
+                          />
+                          {currentInterval.TYPE === 'cyclic' ? (
+                            <Select
+                              name="cyclic-c"
+                              defaultValue={currentInterval.MINORHOURS}
+                              value={currentInterval.MINORHOURS}
+                              onValueChange={(value) => {
+                                const newSelectValues = [...selectCyclicValues];
+                                const existingIntervalIndex = newSelectValues.findIndex(
+                                  (item) => item.interval === interval
+                                );
+                                if (existingIntervalIndex > -1) {
+                                  newSelectValues[existingIntervalIndex].MINORHOURS = value;
+                                } else {
+                                  newSelectValues.push({
+                                    interval,
+                                    TYPE: currentInterval.TYPE,
+                                    VALUES: currentInterval.VALUES,
+                                    MINORHOURS: value,
+                                    TIMEZONE: currentInterval.TIMEZONE,
+                                  });
+                                }
+                                setSelectCyclicValues(newSelectValues);
+                              }}
+                            >
+                              <SelectTrigger className="w-[100px]">
+                                <SelectValue placeholder="minutes" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="minutes">minutes</SelectItem>
+                                <SelectItem value="hours">hours</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Select
+                              name="cyclic-t"
+                              value={currentInterval.TIMEZONE}
+                              defaultValue={currentInterval.TIMEZONE}
+                              onValueChange={(value) => {
+                                const newSelectValues = [...selectCyclicValues];
+                                const existingIntervalIndex = newSelectValues.findIndex(
+                                  (item) => item.interval === interval
+                                );
+                                if (existingIntervalIndex > -1) {
+                                  newSelectValues[existingIntervalIndex].TIMEZONE = value;
+                                } else {
+                                  newSelectValues.push({
+                                    interval,
+                                    TYPE: currentInterval.TYPE,
+                                    VALUES: currentInterval.VALUES,
+                                    MINORHOURS: currentInterval.MINORHOURS,
+                                    TIMEZONE: value,
+                                  });
+                                }
+                                setSelectCyclicValues(newSelectValues);
+                              }}
+                            >
+                              <SelectTrigger className="w-[100px]">
+                                <SelectValue placeholder="timezone" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="cst">cst</SelectItem>
+                                <SelectItem value="est">est</SelectItem>
+                                <SelectItem value="cet">cet</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        </div>
                       </div>
+                      <Separator className="my-2" />
                     </div>
                   );
                 })}
               </TabsContent>
-              <TabsContent value="timefrom" className="flex flex-col gap-y-3 ">
+              <TabsContent value="timefrom">
                 {timeFrom?.map((values, index) => {
                   return (
-                    <div className="w-full flex grow items-center justify-center">
-                      <div key={index} className="grid w-full  items-center gap-1.5 max-w-sm">
-                        <Label className="text-xs" htmlFor={index.toString()}>
-                          Correct time from
-                        </Label>
-                        <p className="text-xs whitespace-pre max-w-[500px] text-ellipsis">{values.origTimeFrom}</p>
+                    <div key={index} className="w-full grow">
+                      <div className="grid w-full grid-cols-2 items-center justify-center gap-5 px-2 ">
+                        <div className=" flex flex-col items-end">
+                          <Label className="text-xs" htmlFor={index.toString()}>
+                            Correct time from
+                          </Label>
+                          <p className="text-xs whitespace-pre max-w-[500px] text-ellipsis">{values.origTimeFrom}</p>
+                        </div>
                         <div className="flex gap-x-3">
                           <div className="grid w-full max-w-[330px] items-center gap-1.5">
                             <Label htmlFor="timefrom">Convert time from</Label>
@@ -570,19 +578,22 @@ export default function Index() {
                           </div>
                         </div>
                       </div>
+                      <Separator className="my-2" />
                     </div>
                   );
                 })}
               </TabsContent>
-              <TabsContent value="timeto" className="flex flex-col gap-y-3">
+              <TabsContent value="timeto">
                 {timeTo?.map((values, index) => {
                   return (
-                    <div className="w-full flex grow items-center justify-center">
-                      <div key={index} className="grid w-full  items-center gap-1.5 max-w-sm">
-                        <Label className="text-xs" htmlFor={index.toString()}>
-                          Correct time to
-                        </Label>
-                        <p className="text-xs whitespace-pre max-w-[500px] text-ellipsis">{values.origTimeTo}</p>
+                    <div key={index} className="w-full grow">
+                      <div className="grid w-full grid-cols-2 items-center justify-center gap-5 px-2 ">
+                        <div className=" flex flex-col items-end">
+                          <Label className="text-xs" htmlFor={index.toString()}>
+                            Correct time to
+                          </Label>
+                          <p className="text-xs whitespace-pre max-w-[500px] text-ellipsis">{values.origTimeTo}</p>
+                        </div>
                         <div className="flex gap-x-3">
                           <div className="grid w-full max-w-[330px] items-center gap-1.5">
                             <Label htmlFor="timeto">Convert time to</Label>
@@ -599,74 +610,81 @@ export default function Index() {
                           </div>
                         </div>
                       </div>
+                      <Separator className="my-2" />
                     </div>
                   );
                 })}
               </TabsContent>
 
-              <TabsContent value="oncode" className="flex flex-col gap-y-3">
+              <TabsContent value="oncode">
                 {updateOncode?.map((values, index) => {
                   return (
-                    <div key={index} className="flex flex-col w-full gap-1.5 px-5">
-                      <Label className="text-xs" htmlFor={index.toString()}>
-                        Correct oncode
-                      </Label>
-                      <p className="text-xs whitespace-pre max-w-[500px] text-ellipsis">{values.oncode}</p>
-                      <div className="flex flex-col gap-y-2">
-                        <div className="flex gap-x-3">
-                          <div className="grid w-full max-w-[100px] items-center gap-1.5">
-                            <Label htmlFor="rc">Return code</Label>
-                            <Input
-                              id="rc"
-                              placeholder="number"
-                              type="number"
-                              value={values.rc}
-                              onChange={(e) => updateValue(index, 'rc', e.target.value)}
-                            />
-                          </div>
-                          <div className="grid w-full max-w-[400px] items-center gap-1.5">
-                            <Label htmlFor="mailto">Mailto</Label>
-                            <Input
-                              id="mailto"
-                              placeholder="emails"
-                              value={values.mailto}
-                              onChange={(e) => updateValue(index, 'mailto', e.target.value)}
-                            />
-                          </div>
-                          <div className="grid w-full max-w-[150px] items-center gap-1.5">
-                            <Label htmlFor="output">Output</Label>
-                            <Select defaultValue="yes" onValueChange={(value) => updateValue(index, 'output', value)}>
-                              <SelectTrigger className="w-[150px]">
-                                <SelectValue placeholder="Attach output" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="yes">yes</SelectItem>
-                                <SelectItem value="no">no</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
+                    <div key={index} className="w-full grow">
+                      <div className="grid w-full grid-cols-2 items-center justify-center gap-5 px-2 ">
+                        <div className=" flex flex-col">
+                          <Label className="text-xs" htmlFor={index.toString()}>
+                            Correct oncode
+                          </Label>
+
+                          <p className="text-xs break-words whitespace-pre-wrap text-wrap">{values.oncode}</p>
                         </div>
-                        <div className="flex gap-x-3">
-                          <div className="grid w-full max-w-[330px] items-center gap-1.5">
-                            <Label htmlFor="subject">Subject</Label>
-                            <Input
-                              id="subject"
-                              placeholder="subject"
-                              value={values.subject}
-                              onChange={(e) => updateValue(index, 'subject', e.target.value)}
-                            />
+                        <div className="flex flex-col gap-y-2">
+                          <div className="flex gap-x-3">
+                            <div className="grid w-full max-w-[100px] items-center gap-1.5">
+                              <Label htmlFor="rc">Return code</Label>
+                              <Input
+                                id="rc"
+                                placeholder="number"
+                                type="number"
+                                value={values.rc}
+                                onChange={(e) => updateValue(index, 'rc', e.target.value)}
+                              />
+                            </div>
+                            <div className="grid w-full max-w-[400px] items-center gap-1.5">
+                              <Label htmlFor="mailto">Mailto</Label>
+                              <Input
+                                id="mailto"
+                                placeholder="emails"
+                                value={values.mailto}
+                                onChange={(e) => updateValue(index, 'mailto', e.target.value)}
+                              />
+                            </div>
+                            <div className="grid w-full max-w-[150px] items-center gap-1.5">
+                              <Label htmlFor="output">Output</Label>
+                              <Select defaultValue="yes" onValueChange={(value) => updateValue(index, 'output', value)}>
+                                <SelectTrigger className="w-[150px]">
+                                  <SelectValue placeholder="Attach output" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="yes">yes</SelectItem>
+                                  <SelectItem value="no">no</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
-                          <div className="grid w-full max-w-[330px] items-center gap-1.5">
-                            <Label htmlFor="message">Messsage</Label>
-                            <Input
-                              id="message"
-                              placeholder="messsage"
-                              value={values.message}
-                              onChange={(e) => updateValue(index, 'message', e.target.value)}
-                            />
+                          <div className="flex gap-x-3">
+                            <div className="grid w-full max-w-[330px] items-center gap-1.5">
+                              <Label htmlFor="subject">Subject</Label>
+                              <Input
+                                id="subject"
+                                placeholder="subject"
+                                value={values.subject}
+                                onChange={(e) => updateValue(index, 'subject', e.target.value)}
+                              />
+                            </div>
+                            <div className="grid w-full max-w-[330px] items-center gap-1.5">
+                              <Label htmlFor="message">Messsage</Label>
+                              <Input
+                                id="message"
+                                placeholder="messsage"
+                                value={values.message}
+                                onChange={(e) => updateValue(index, 'message', e.target.value)}
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
+                      <Separator className="my-2" />
                     </div>
                   );
                 })}
