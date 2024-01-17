@@ -1,5 +1,5 @@
 import { type ActionFunctionArgs } from '@remix-run/node';
-import { Form } from '@remix-run/react';
+import { Form, useNavigation } from '@remix-run/react';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
 import * as XLSX from 'xlsx';
@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import electron from '~/electron.server';
 import { Separator } from '~/components/ui/separator';
+import { useToast } from '~/components/ui/use-toast';
 
 type SheetData = { [key: string]: any };
 
@@ -247,6 +248,7 @@ export default function Index() {
   const [selectCyclicValues, setSelectCyclicValues] = useState<
     Array<{ interval: string; TYPE: string; VALUES: string; MINORHOURS: string; TIMEZONE: string }>
   >([]);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (data.length > 0) {
@@ -347,6 +349,26 @@ export default function Index() {
       {data.length > 0 && (
         <div className="w-full flex flex-col gap-y-2 ">
           <p className="flex gap-x-3 justify-center text-sm">Loaded jobs: {data.length}</p>
+          <Form method="post" className="flex w-full justify-center items-center">
+            <input hidden name="nodeid" type="text" value={nodeId} readOnly />
+            <input hidden name="interval" type="text" value={JSON.stringify(selectCyclicValues)} readOnly />
+            <input hidden name="oncode" type="text" value={JSON.stringify(updateOncode)} readOnly />
+            <input hidden name="sheet_data" type="text" value={JSON.stringify(data)} readOnly />
+            <input hidden name="timefrom" type="text" value={JSON.stringify(timeFrom)} readOnly />
+            <input hidden name="timeto" type="text" value={JSON.stringify(timeTo)} readOnly />
+            <Button
+              type="submit"
+              onClick={() =>
+                toast({
+                  title: 'Information',
+                  description: 'File output.xml has been successfuly creeated.',
+                })
+              }
+            >
+              Create XML
+            </Button>
+          </Form>
+          <Separator className="my-2" />
           <div className="flex flex-col gap-y-2 justify-center items-center">
             <Tabs defaultValue="nodeid" className="w-full">
               <TabsList className="flex grow">
@@ -691,15 +713,6 @@ export default function Index() {
               </TabsContent>
             </Tabs>
           </div>
-          <Form method="post" className="flex w-full justify-center items-center">
-            <input hidden name="nodeid" type="text" value={nodeId} readOnly />
-            <input hidden name="interval" type="text" value={JSON.stringify(selectCyclicValues)} readOnly />
-            <input hidden name="oncode" type="text" value={JSON.stringify(updateOncode)} readOnly />
-            <input hidden name="sheet_data" type="text" value={JSON.stringify(data)} readOnly />
-            <input hidden name="timefrom" type="text" value={JSON.stringify(timeFrom)} readOnly />
-            <input hidden name="timeto" type="text" value={JSON.stringify(timeTo)} readOnly />
-            <Button type="submit">Create XML</Button>
-          </Form>
         </div>
       )}
     </main>

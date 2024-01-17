@@ -7,7 +7,8 @@
   "sideEffects": false,
   "scripts": {
     "dev": "remix dev --command \"nodemon .\" --manual",
-    "build": "remix build && electron-builder",
+    "build": "remix build && electron-builder -mwl",
+    "build-windows": "remix build && electron-builder --win --x64",
     "start": "electron ."
   },
   "build": {
@@ -25,6 +26,7 @@
     "@radix-ui/react-separator": "^1.0.3",
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-tabs": "^1.0.4",
+    "@radix-ui/react-toast": "^1.1.5",
     "@remix-run/css-bundle": "^2.4.0",
     "@remix-run/node": "^2.4.0",
     "@remix-run/react": "^2.4.0",

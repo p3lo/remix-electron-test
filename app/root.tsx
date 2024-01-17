@@ -1,6 +1,7 @@
 import type { LinksFunction, MetaFunction } from '@remix-run/node';
 import { Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration } from '@remix-run/react';
 import styles from './styles.css';
+import { Toaster } from './components/ui/toaster';
 
 export const meta: MetaFunction = () => [{ title: 'Control-M XML converter' }];
 
@@ -17,6 +18,7 @@ export default function App() {
       </head>
       <body>
         <Outlet />
+        <Toaster />
         <ScrollRestoration />
         <Scripts />
         <LiveReload />
