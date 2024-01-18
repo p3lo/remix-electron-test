@@ -7,7 +7,7 @@
   "sideEffects": false,
   "scripts": {
     "dev": "remix dev --command \"nodemon .\" --manual",
-    "build": "remix build && electron-builder -mwl",
+    "build": "remix build && electron-builder",
     "build-windows": "remix build && electron-builder --win --x64",
     "start": "electron ."
   },
